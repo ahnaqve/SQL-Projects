@@ -1,0 +1,86 @@
+
+-- Pizza Place Sales SQL Project --
+
+
+--> 1. How many orders do we have each day?
+
+-- How many orders do we have each day?
+WITH cte AS (SELECT DATE, Count(order_id) AS order_per_day
+FROM   "orders"
+GROUP  BY 1)
+SELECT Round(Avg(order_per_day), 0) AS mean_of_orders,
+Percentile_cont(.5) within GROUP (ORDER BY order_per_day) AS median_of_orders,
+MODE() within GROUP (ORDER BY order_per_day) AS mode_of_orders
+FROM cte;
+
+
+--> 2. Are there any peak hours?
+
+-- Are there any peak hours?
+select extract(hour from time::time) as peak_hour,
+sum(quantity) as total_qty_ordered
+from "orders" join "order_details" using(order_id)
+group by 1
+order by 2 desc
+limit 3;
+
+
+--> 3. How many pizzas are typically in an order?
+
+-- How many pizzas are typically in an order? 
+with CTE as (select order_id, sum(quantity) as qty_per_order
+from "order_details"
+group by 1)
+select mode() within group (order by qty_per_order) as typical_order_qty
+from CTE;
+
+
+--> 4. Do we have any bestsellers?
+
+-- Do we have any bestsellers?
+select name as pizza_name, sum(quantity) as total_qty_ordered
+from "order_details"  join "pizzas" using(pizza_id) join "pizza_types" using(pizza_type_id)
+group by 1
+order by 2 desc
+limit 1;
+
+
+--> 5. How much money did we make this year?
+
+-- How much money did we make this year?
+select concat(round(sum(quantity*price)/1000), ' K') as total_sales
+from "order_details"  join "pizzas" using(pizza_id);
+
+
+--> 6. Can we indentify any seasonality in the sales?
+
+-- Can we indentify any seasonality in the sales?
+select concat('Q',extract(quarter from date)) as season, round(sum(quantity*price)::decimal,0) as total_sales
+from "orders" join "order_details" using(order_id) join "pizzas" using(pizza_id)
+group by 1
+order by 2 desc;
+
+
+--> 7. Are there any pizzas we should take off the menu?
+
+-- Are there any pizzas we should take of the menu?
+select name as pizza_name, sum(quantity) as total_qty_ordered
+from "order_details"  join "pizzas" using(pizza_id) join "pizza_types" using(pizza_type_id)
+group by 1
+order by 2 asc;
+
+
+--> 8. What is the Month-over-Month growth for pizza sales?
+
+-- What is the Month-over-Month growth for pizza sales?
+with CTE as (select extract(month from date) as month, round(sum(quantity*price)) as curr_month_sales,
+lag(round(sum(quantity*price))) over (order by extract(month from date)) as prev_month_sales
+from "orders" join "order_details" using(order_id) join "pizzas" using(pizza_id)
+group by 1)
+select month, curr_month_sales, prev_month_sales,
+round(100*(curr_month_sales-prev_month_sales)::decimal/prev_month_sales::decimal,2) as "MoM growth %"
+from CTE;
+
+
+-- Pizza Place Sales SQL Project by Abbas Hyder Naqvi
+
