@@ -5,13 +5,18 @@ Here you can find my SQL Queries as well as files and insights of projects creat
 https://github.com/ahnaqve/SQL-Projects/tree/SQL-Case-Study-Tiny-Shop-Sales
 
 # Overview
-This case study uses PostgreSQL. To successfully answer all the questions you should have been exposed to the following areas of SQL:
+This case study uses PostgreSQL. To successfully answer all the questions, one should have been exposed to the following areas of SQL:
 
 Basic aggregations
+
 CASE WHEN statements
+
 Window Functions
+
 Joins
+
 Date time functions
+
 CTEs
 
 # Project Tasks List 
