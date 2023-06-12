@@ -1,3 +1,4 @@
+-- SQL Case Study 1: Tiny Shop Sales
 
 --1) Which product has the highest price? Only return a single row.
 SELECT *
