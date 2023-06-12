@@ -1,0 +1,164 @@
+
+--1) Which product has the highest price? Only return a single row.
+SELECT *
+FROM   products
+WHERE  price = (SELECT Max(price)
+                FROM   products); 
+
+
+
+--2) Which customer has made the most orders?
+WITH cte
+     AS (SELECT customer_id,
+                first_name,
+                last_name,
+                Count(order_id)                    AS total_orders,
+                Rank()
+                  OVER (
+                    ORDER BY Count(order_id) DESC) ranking
+         FROM   customers
+                JOIN orders using(customer_id)
+         GROUP  BY 1,
+                   2,
+                   3)
+SELECT customer_id,
+       first_name,
+       last_name,
+       total_orders
+FROM   cte
+WHERE  ranking = 1; 
+
+
+
+--3) What’s the total revenue per product?
+SELECT product_id,
+       product_name,
+       Sum(quantity * price) AS total_revenue
+FROM   order_items
+       JOIN products USING(product_id)
+GROUP  BY 1,
+          2
+ORDER  BY 1; 
+
+
+
+--4) Find the day with the highest revenue.
+SELECT Extract(day FROM order_date) AS "Day",
+       Sum(quantity * price)        AS "Revenue"
+FROM   orders
+       JOIN order_items USING(order_id)
+       JOIN products USING(product_id)
+GROUP  BY 1
+ORDER  BY 2 DESC
+LIMIT  1; 
+
+
+
+--5) Find the first order (by date) for each customer.
+WITH cte
+     AS (SELECT customer_id,
+                first_name,
+                last_name,
+                order_id,
+                order_date,
+                Row_number()
+                  OVER (
+                    partition BY customer_id
+                    ORDER BY order_date) AS order_rank
+         FROM   orders
+                JOIN customers using(customer_id))
+SELECT customer_id,
+       first_name,
+       last_name,
+       order_id,
+       order_date
+FROM   cte
+WHERE  order_rank = 1; 
+
+
+
+--6) Find the top 3 customers who have ordered the most distinct products
+WITH cte
+     AS (SELECT customer_id,
+                Count(DISTINCT product_id)                    AS
+                distinct_product_count,
+                Rank()
+                  OVER (
+                    ORDER BY Count(DISTINCT product_id) DESC) AS ranking
+         FROM   orders
+                JOIN order_items using(order_id)
+         GROUP  BY 1)
+SELECT customer_id,
+       distinct_product_count
+FROM   cte
+WHERE  ranking <= 3; 
+
+
+
+--7) Which product has been bought the least in terms of quantity?
+WITH cte
+     AS (SELECT product_id,
+                product_name,
+                Sum(quantity)               AS qty_bought,
+                Rank()
+                  OVER (
+                    ORDER BY Sum(quantity)) AS ranking
+         FROM   order_items
+                JOIN products using(product_id)
+         GROUP  BY 1,
+                   2)
+SELECT product_id,
+       product_name,
+       qty_bought
+FROM   cte
+WHERE  ranking = 1; 
+
+
+
+
+--8) What is the median order total?
+WITH cte
+     AS (SELECT order_id,
+                SUM(quantity * price) AS total_price
+         FROM   order_items
+                join products USING(product_id)
+         GROUP  BY 1)
+SELECT Percentile_cont(0.5)
+         within GROUP (ORDER BY total_price) AS median_order_total
+FROM   cte; 
+
+
+
+
+--9) For each order, determine if it was ‘Expensive’ (total over 300), ‘Affordable’ (total over 100), or ‘Cheap’.
+WITH cte
+     AS (SELECT order_id,
+                Sum(quantity * price) AS order_total
+         FROM   order_items
+                JOIN products using(product_id)
+         GROUP  BY 1)
+SELECT order_id,
+       order_total,
+       CASE
+         WHEN order_total > 300 THEN 'Expensive'
+         WHEN order_total > 100
+              AND order_total <= 300 THEN 'Affordable'
+         ELSE 'Cheap'
+       END category
+FROM   cte; 
+
+
+
+--10) Find customers who have ordered the product with the highest price.
+SELECT customer_id,
+       first_name,
+       last_name,
+       product_id,
+       price AS highest_price
+FROM   customers
+       JOIN orders USING(customer_id)
+       JOIN order_items USING(order_id)
+       JOIN products USING(product_id)
+WHERE  price = (SELECT Max(price)
+                FROM   products); 
+
