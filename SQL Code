@@ -1,4 +1,3 @@
--- SQL Case Study 1: Tiny Shop Sales
 
 --1) Which product has the highest price? Only return a single row.
 SELECT *
@@ -62,17 +61,20 @@ WITH cte
                 last_name,
                 order_id,
                 order_date,
-                Row_number()
+                product_id,
+                Dense_rank()
                   OVER (
                     partition BY customer_id
                     ORDER BY order_date) AS order_rank
          FROM   orders
-                JOIN customers using(customer_id))
+                JOIN customers using(customer_id)
+                JOIN order_items using(order_id))
 SELECT customer_id,
        first_name,
        last_name,
        order_id,
-       order_date
+       order_date,
+       product_id
 FROM   cte
 WHERE  order_rank = 1; 
 
@@ -163,3 +165,4 @@ FROM   customers
 WHERE  price = (SELECT Max(price)
                 FROM   products); 
 
+-- Solutions by Abbas Hyder Naqvi
